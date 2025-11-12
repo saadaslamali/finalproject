@@ -78,7 +78,6 @@ function setup() {
     });
   });
 }*/
-
 function setup() {
   createCanvas(windowWidth, windowHeight);
   world.gravity.y = 0;
@@ -92,17 +91,15 @@ function setup() {
   objects = new Group();
   objects.collider = "dynamic";
 
-    endreason = 0;
+  endreason = 0;
   gameOver = false;
   score = 0;
 
   lockGestures();
 
-  // Create camera (but don't start FaceMesh yet)
+  // Just create the camera — do NOT enableCameraTap yet
   cam = createPhoneCamera('user', true, 'fitHeight');
-  enableCameraTap(); // <-- this is what triggers permission on first tap
 }
-
 function gotFaces(results) {
   faces = results;
 }
@@ -381,14 +378,17 @@ function touchStarted() {
   SHOW_VIDEO = !SHOW_VIDEO;
   return false;
 }*/
+
 function touchStarted() {
-  // FIRST TAP — request camera
+  // FIRST TAP — request camera permission
   if (startScreen) {
     startScreen = false;
     waitingForCamera = true;
 
+    // this ensures the browser’s permission popup appears now
+    enableCameraTap();
+
     cam.onReady(() => {
-      // When camera is ready, load FaceMesh
       let options = {
         maxFaces: 1,
         refineLandmarks: false,
@@ -402,13 +402,12 @@ function touchStarted() {
     return false;
   }
 
-  // SECOND TAP — once camera ready, start the game
+  // SECOND TAP — after permission granted, actually start game
   if (waitingForCamera && cam.ready) {
     waitingForCamera = false;
     return false;
   }
 
-  // Restart if game over
   if (gameOver) {
     resetGame();
     return false;
