@@ -62,7 +62,7 @@ function setup() {
   lockGestures();
 
   cam = createPhoneCamera('user', true, 'fitHeight');
-  enableCameraTap();
+  // enableCameraTap();
 
   cam.onReady(() => {
     let options = {
@@ -299,7 +299,8 @@ function drawEndScreen(code) {
 */
 function touchStarted() {
   if (startScreen) {
-    startScreen = false; // start the game
+    startScreen = false;
+    if (!cam.active) cam.start(); // manually activate camera now
     return false;
   }
 
