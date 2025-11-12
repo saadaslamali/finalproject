@@ -1,4 +1,6 @@
-
+// ==============================================
+// NEELUM — YOUR VERSION + SCORE/REASONS/BAR-SIZE SCALING
+// ==============================================
 
 let neelum;
 let objects; 
@@ -60,7 +62,7 @@ function setup() {
   lockGestures();
 
   cam = createPhoneCamera('user', true, 'fitHeight');
-  // enableCameraTap();
+  enableCameraTap();
 
   cam.onReady(() => {
     let options = {
@@ -78,22 +80,14 @@ function setup() {
 function gotFaces(results) {
   faces = results;
 }
-
 function draw() {
-  // START SCREEN
+  // start screen first
   if (startScreen) {
     drawStartScreen();
-
-    // draw Neelum centered lower for aesthetic (static, no tracking yet)
-    push();
-    imageMode(CENTER);
-    let yOffset = height * 0.65; // a bit lower on screen
-    image(loadImage('neelum.png'), width / 2, yOffset, width * 0.25, width * 0.25);
-    pop();
     return;
   }
 
-  // GAMEPLAY (unchanged)
+  // faded background
   background(0);
   push();
   tint(255, 200);
@@ -105,16 +99,17 @@ function draw() {
     return;
   }
 
+  // score timer
   score += deltaTime / 1000.0;
 
-  // Face → Neelum (normal tracking, no offset)
+  // Face → neelum
   if (faces.length > 0) {
     let face = faces[0];
     if (face.keypoints && face.keypoints.length > 0) {
       let trackedKeypoint = face.keypoints[TRACKED_KEYPOINT_INDEX];
       if (trackedKeypoint) {
         cursor = cam.mapKeypoint(trackedKeypoint);
-        neelum.moveTowards(cursor.x, cursor.y, 0.1); // original behavior
+        neelum.moveTowards(cursor.x, cursor.y, 0.1);
       }
     }
   }
@@ -123,10 +118,10 @@ function draw() {
   neelum.overlap(objects, handleCollision);
 
   waterLevel -= WATER_DECAY;
-  sunLevel -= SUN_DECAY;
+  sunLevel   -= SUN_DECAY;
 
   if (waterLevel <= 0) endGame(1);
-  if (sunLevel <= 0) endGame(2);
+  if (sunLevel <= 0)   endGame(2);
 
   drawBars();
   drawHUD();
@@ -151,6 +146,7 @@ function drawStartScreen() {
   );
 
   textSize(min(width, height) * 0.035);
+  fill(255, 220, 180);
   text("Tap to Start", width / 2, height * 0.75);
 }
 
@@ -302,25 +298,8 @@ function drawEndScreen(code) {
 }
 */
 function touchStarted() {
-  // Start screen tap
   if (startScreen) {
-    startScreen = false;
-
-    // Start camera manually
-    if (!cam.active) {
-      cam.start(() => {
-        // Wait for camera to be ready, then load FaceMesh
-        let options = {
-          maxFaces: 1,
-          refineLandmarks: false,
-          runtime: 'mediapipe',
-          flipHorizontal: false
-        };
-        facemesh = ml5.faceMesh(options, () => {
-          facemesh.detectStart(cam.videoElement, gotFaces);
-        });
-      });
-    }
+    startScreen = false; // start the game
     return false;
   }
 
@@ -332,6 +311,7 @@ function touchStarted() {
   SHOW_VIDEO = !SHOW_VIDEO;
   return false;
 }
+
 function wrapText(txt, x, y, maxWidth, lineHeight) {
   const words = txt.split(' ');
   let line = '';
