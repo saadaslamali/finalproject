@@ -21,6 +21,7 @@ let sunLevel = 50;
 let gameOver = false;
 let endreason = 0;
 
+let startScreen = true; // new: start screen flag
 // Score
 let score = 0;
 let highScore = 0;
@@ -79,12 +80,17 @@ function setup() {
 function gotFaces(results) {
   faces = results;
 }
-
 function draw() {
+  // start screen first
+  if (startScreen) {
+    drawStartScreen();
+    return;
+  }
+
   // faded background
   background(0);
   push();
-  tint(255, 200); // reduce opacity to ~80%
+  tint(255, 200);
   image(bg, 0, 0, width, height);
   pop();
 
@@ -93,11 +99,8 @@ function draw() {
     return;
   }
 
-  // score timer (seconds)
+  // score timer
   score += deltaTime / 1000.0;
-
-  // draw shadows first
-  drawShadows();
 
   // Face → neelum
   if (faces.length > 0) {
@@ -111,17 +114,12 @@ function draw() {
     }
   }
 
-  // spawn
   if (frameCount % 45 === 0) spawnObject();
-
-  // collisions
   neelum.overlap(objects, handleCollision);
 
-  // decay
   waterLevel -= WATER_DECAY;
   sunLevel   -= SUN_DECAY;
 
-  // deaths by depletion
   if (waterLevel <= 0) endGame(1);
   if (sunLevel <= 0)   endGame(2);
 
@@ -129,26 +127,54 @@ function draw() {
   drawHUD();
 }
 
-function drawShadows() {
-  // soft shadow under Neelum
+function drawStartScreen() {
+  background(0);
   push();
-  tint(0, 0, 0, 100); 
-  imageMode(CENTER);
-  image(neelum.image, neelum.x + 6, neelum.y + 10, neelum.width * 1.05, neelum.height * 1.05);
+  tint(255, 200);
+  image(bg, 0, 0, width, height);
   pop();
 
-  // shadows under each falling object
-  for (let o of objects) {
-    push();
-    noStroke();
-    if (o.type === "blue") fill(0, 0, 80, 100);       // blueish shadow
-    else if (o.type === "yellow") fill(80, 80, 0, 100); // warm yellow shadow
-    else if (o.type === "red") fill(80, 0, 0, 100);   // reddish shadow
-    else fill(0, 0, 0, 100);
-    ellipse(o.x, o.y + 6, o.width * 1.3, o.height * 1.3);
-    pop();
-  }
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(min(width, height) * 0.06);
+  text("NEELUM", width / 2, height * 0.25);
+
+  textSize(min(width, height) * 0.04);
+  text(
+    "Help Neelum the Pothos survive in the big city",
+    width / 2, height * 0.45
+  );
+
+  textSize(min(width, height) * 0.035);
+  fill(255, 220, 180);
+  text("Tap to Start", width / 2, height * 0.75);
 }
+
+// ---------------------- END SCREEN ----------------------
+function drawEndScreen(code) {
+  background(0, 180);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(min(width, height) * 0.05); // responsive text size
+
+  let msg = "";
+  if (code === 1) msg = "Neelum died from dehydration :(";
+  else if (code === 2) msg = "Neelum died from vitamin D deficiency :(";
+  else if (code === 3) msg = "Neelum died from air pollution :(";
+  else if (code === 4) msg = "Neelum died from too much sun :(";
+  else msg = "Neelum died";
+
+  wrapText(msg, width / 2, height / 2 - 40, width * 0.85, min(width, height) * 0.05);
+
+  textSize(min(width, height) * 0.04);
+  text(
+    "Final Score: " + floor(score) +
+    "\nHigh Score: " + floor(highScore) +
+    "\n\nTap to restart",
+    width / 2, height / 2 + 80
+  );
+}
+
 
 function spawnObject() {
   let side = floor(random(4));
@@ -248,7 +274,7 @@ function endGame(reasonCode) {
   // optionally stop all active sprites
   objects.forEach(o => { o.vel.x = 0; o.vel.y = 0; });
 }
-
+/*
 function drawEndScreen(code) {
   background(0, 180);
   fill(255);
@@ -270,14 +296,38 @@ function drawEndScreen(code) {
     width / 2, height / 2 + 40
   );
 }
-
+*/
 function touchStarted() {
+  if (startScreen) {
+    startScreen = false; // start the game
+    return false;
+  }
+
   if (gameOver) {
     resetGame();
-  } else {
-    SHOW_VIDEO = !SHOW_VIDEO;
+    return false;
   }
+
+  SHOW_VIDEO = !SHOW_VIDEO;
   return false;
+}
+
+function wrapText(txt, x, y, maxWidth, lineHeight) {
+  const words = txt.split(' ');
+  let line = '';
+  let ty = y;
+  for (let i = 0; i < words.length; i++) {
+    let testLine = line + words[i] + ' ';
+    let testWidth = textWidth(testLine);
+    if (testWidth > maxWidth && i > 0) {
+      text(line, x, ty);
+      line = words[i] + ' ';
+      ty += lineHeight * 1.2;
+    } else {
+      line = testLine;
+    }
+  }
+  text(line, x, ty);
 }
 
 function resetGame() {
