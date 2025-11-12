@@ -1,6 +1,4 @@
-// ==============================================
-// NEELUM — YOUR VERSION + SCORE/REASONS/BAR-SIZE SCALING
-// ==============================================
+
 
 let neelum;
 let objects; 
@@ -21,10 +19,8 @@ let sunLevel = 50;
 let gameOver = false;
 let endreason = 0;
 
-
-
-let startScreen = true;      // first screen before anything
-let waitingForCamera = false; // after first tap, before game starts
+let startScreen = true; // new: start screen flag
+// Score
 let score = 0;
 let highScore = 0;
 
@@ -43,7 +39,7 @@ function preload() {
   sun = loadImage('sunicon2.png');
   smog = loadImage('smogicon2.png');
 }
-/*
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   world.gravity.y = 0;
@@ -77,29 +73,8 @@ function setup() {
       facemesh.detectStart(cam.videoElement, gotFaces);
     });
   });
-}*/
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  world.gravity.y = 0;
-
-  neelum = new Sprite();
-  neelum.image = 'neelum2.png';
-  neelum.image.scale = 0.1;
-  neelum.color = "black";
-  neelum.collider = "kinematic";
-
-  objects = new Group();
-  objects.collider = "dynamic";
-
-  endreason = 0;
-  gameOver = false;
-  score = 0;
-
-  lockGestures();
-
-  // Just create the camera — do NOT enableCameraTap yet
-  cam = createPhoneCamera('user', true, 'fitHeight');
 }
+
 function gotFaces(results) {
   faces = results;
 }
@@ -108,20 +83,15 @@ function draw() {
   // START SCREEN
   if (startScreen) {
     drawStartScreen();
+
+    // draw Neelum centered lower for aesthetic (static, no tracking yet)
     push();
     imageMode(CENTER);
-    let yOffset = height * 0.65;
+    let yOffset = height * 0.65; // a bit lower on screen
     image(loadImage('neelum.png'), width / 2, yOffset, width * 0.25, width * 0.25);
     pop();
     return;
   }
-
-  if (waitingForCamera) {
-    drawWaitingScreen();
-    return;
-  }
-
-
 
   // GAMEPLAY (unchanged)
   background(0);
@@ -160,22 +130,6 @@ function draw() {
 
   drawBars();
   drawHUD();
-}
-
-function drawWaitingScreen() {
-  background(0);
-  push();
-  tint(255, 200);
-  image(bg, 0, 0, width, height);
-  pop();
-
-  fill(255);
-  textAlign(CENTER, CENTER);
-  textSize(min(width, height) * 0.045);
-  text("Allow camera access to continue", width / 2, height * 0.4);
-
-  textSize(min(width, height) * 0.035);
-  text("Then tap again to start", width / 2, height * 0.55);
 }
 
 function drawStartScreen() {
@@ -346,7 +300,7 @@ function drawEndScreen(code) {
     width / 2, height / 2 + 40
   );
 }
-*//*
+*/
 function touchStarted() {
   // Start screen tap
   if (startScreen) {
@@ -377,45 +331,7 @@ function touchStarted() {
 
   SHOW_VIDEO = !SHOW_VIDEO;
   return false;
-}*/
-
-function touchStarted() {
-  // FIRST TAP — request camera permission
-  if (startScreen) {
-    startScreen = false;
-    waitingForCamera = true;
-
-    // this ensures the browser’s permission popup appears now
-    enableCameraTap();
-
-    cam.onReady(() => {
-      let options = {
-        maxFaces: 1,
-        refineLandmarks: false,
-        runtime: 'mediapipe',
-        flipHorizontal: false
-      };
-      facemesh = ml5.faceMesh(options, () => {
-        facemesh.detectStart(cam.videoElement, gotFaces);
-      });
-    });
-    return false;
-  }
-
-  // SECOND TAP — after permission granted, actually start game
-  if (waitingForCamera && cam.ready) {
-    waitingForCamera = false;
-    return false;
-  }
-
-  if (gameOver) {
-    resetGame();
-    return false;
-  }
-
-  return false;
 }
-
 function wrapText(txt, x, y, maxWidth, lineHeight) {
   const words = txt.split(' ');
   let line = '';
