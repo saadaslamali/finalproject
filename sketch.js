@@ -90,15 +90,15 @@ function setup() {
   objects = new Group();
   objects.collider = "dynamic";
 
-  endreason = 0;
+    endreason = 0;
   gameOver = false;
   score = 0;
 
   lockGestures();
 
-  // Create camera but do NOT start or attach FaceMesh yet
+  // Create camera (but don't start FaceMesh yet)
   cam = createPhoneCamera('user', true, 'fitHeight');
-  // no enableCameraTap()
+  enableCameraTap(); // <-- this is what triggers permission on first tap
 }
 
 function gotFaces(results) {
@@ -119,14 +119,7 @@ function draw() {
     return;
   }
 
-if (!startScreen && (!cam.active || !facemesh)) {
-  background(0);
-  fill(255);
-  textAlign(CENTER, CENTER);
-  textSize(22);
-  text("Loading camera...", width / 2, height / 2);
-  return;
-}
+
 
   // GAMEPLAY (unchanged)
   background(0);
@@ -367,14 +360,13 @@ function touchStarted() {
   SHOW_VIDEO = !SHOW_VIDEO;
   return false;
 }*/
-
 function touchStarted() {
+  // START SCREEN TAP
   if (startScreen) {
     startScreen = false;
 
-    // Start the camera manually on tap (this triggers the permission prompt)
-    cam.start(() => {
-      // Once camera is active, create and start FaceMesh
+    // Wait for camera to be ready after user taps and permission granted
+    cam.onReady(() => {
       let options = {
         maxFaces: 1,
         refineLandmarks: false,
@@ -396,6 +388,7 @@ function touchStarted() {
 
   return false;
 }
+
 function wrapText(txt, x, y, maxWidth, lineHeight) {
   const words = txt.split(' ');
   let line = '';
