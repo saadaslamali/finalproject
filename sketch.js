@@ -1,5 +1,5 @@
 // ==============================================
-// NEELUM — SMOOTH CAMERA + INSTANT START VERSION
+// NEELUM — SMOOTH CAMERA + FACE-DETECTION WAIT FIX
 // ==============================================
 
 let neelum;
@@ -13,6 +13,8 @@ let cam;
 let facemesh;
 let faces = [];
 let cursor;
+
+let faceReady = false; // new: wait until face detected once
 
 // Bars / state
 let waterLevel = 100;
@@ -52,7 +54,7 @@ function setup() {
   lockGestures();
 
   cam = createPhoneCamera('user', true, 'fitHeight');
-  enableCameraTap(); // triggers camera prompt on first user tap
+  enableCameraTap();
 
   cam.onReady(() => {
     let options = {
@@ -69,6 +71,8 @@ function setup() {
 
 function gotFaces(results) {
   faces = results;
+  // Mark faceReady once we have at least one frame of detection
+  if (results && results.length > 0) faceReady = true;
 }
 
 function draw() {
@@ -77,6 +81,11 @@ function draw() {
   tint(255, 200);
   image(bg, 0, 0, width, height);
   pop();
+
+  if (!faceReady) {
+    drawLoading();
+    return; // wait until first face detected
+  }
 
   if (gameOver) {
     drawEndScreen(endreason);
@@ -108,6 +117,13 @@ function draw() {
 
   drawBars();
   drawHUD();
+}
+
+function drawLoading() {
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(22);
+  text("Loading face tracking...", width / 2, height / 2);
 }
 
 function spawnObject() {
@@ -227,7 +243,6 @@ function touchStarted() {
     resetGame();
     return false;
   }
-  SHOW_VIDEO = !SHOW_VIDEO;
   return false;
 }
 
@@ -256,4 +271,5 @@ function resetGame() {
   sunLevel = 50;
   score = 0;
   objects.removeAll();
+  faceReady = false; // re-wait for tracking
 }
