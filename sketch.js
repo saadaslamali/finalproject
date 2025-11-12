@@ -41,7 +41,7 @@ function preload() {
   sun = loadImage('sunicon2.png');
   smog = loadImage('smogicon2.png');
 }
-
+/*
 function setup() {
   createCanvas(windowWidth, windowHeight);
   world.gravity.y = 0;
@@ -75,6 +75,30 @@ function setup() {
       facemesh.detectStart(cam.videoElement, gotFaces);
     });
   });
+}*/
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  world.gravity.y = 0;
+
+  neelum = new Sprite();
+  neelum.image = 'neelum2.png';
+  neelum.image.scale = 0.1;
+  neelum.color = "black";
+  neelum.collider = "kinematic";
+
+  objects = new Group();
+  objects.collider = "dynamic";
+
+  endreason = 0;
+  gameOver = false;
+  score = 0;
+
+  lockGestures();
+
+  // Create camera but do NOT start or attach FaceMesh yet
+  cam = createPhoneCamera('user', true, 'fitHeight');
+  // no enableCameraTap()
 }
 
 function gotFaces(results) {
@@ -94,6 +118,15 @@ function draw() {
     pop();
     return;
   }
+
+if (!startScreen && (!cam.active || !facemesh)) {
+  background(0);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(22);
+  text("Loading camera...", width / 2, height / 2);
+  return;
+}
 
   // GAMEPLAY (unchanged)
   background(0);
@@ -302,7 +335,7 @@ function drawEndScreen(code) {
     width / 2, height / 2 + 40
   );
 }
-*/
+*//*
 function touchStarted() {
   // Start screen tap
   if (startScreen) {
@@ -332,6 +365,35 @@ function touchStarted() {
   }
 
   SHOW_VIDEO = !SHOW_VIDEO;
+  return false;
+}*/
+
+function touchStarted() {
+  if (startScreen) {
+    startScreen = false;
+
+    // Start the camera manually on tap (this triggers the permission prompt)
+    cam.start(() => {
+      // Once camera is active, create and start FaceMesh
+      let options = {
+        maxFaces: 1,
+        refineLandmarks: false,
+        runtime: 'mediapipe',
+        flipHorizontal: false
+      };
+      facemesh = ml5.faceMesh(options, () => {
+        facemesh.detectStart(cam.videoElement, gotFaces);
+      });
+    });
+
+    return false;
+  }
+
+  if (gameOver) {
+    resetGame();
+    return false;
+  }
+
   return false;
 }
 function wrapText(txt, x, y, maxWidth, lineHeight) {
