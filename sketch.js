@@ -1,323 +1,240 @@
 // ==============================================
-// FACEMESH - FACE TRACKING AS UI INTERACTION (PRELOAD VERSION)
-// ==============================================
-// This example shows how to use face tracking as a new way to interact
-// with objects on screen. Move your nose to control the red dot!
-//
-// This version demonstrates using preload() to load the ML5 model
-// before setup() runs, combined with p5-phone's PhoneCamera methods.
-//
-// INTERACTION CONCEPT:
-// Traditional UI: Touch/click to select objects
-// Face Tracking UI: Move your face to hover/select objects
-//
-// Uses PhoneCamera class from p5-phone for automatic coordinate mapping.
-// Works with any ML5 model (FaceMesh, HandPose, BodyPose, etc.)
+// NEELUM — YOUR VERSION + SCORE/REASONS/BAR-SIZE SCALING
 // ==============================================
 
-// ==============================================
-// ADJUSTABLE PARAMETERS
-// ==============================================
 let neelum;
 let objects; 
+let bg;
 
-let SHOW_VIDEO = true;              // Show/hide video feed (toggle with touch)
-let SHOW_ALL_KEYPOINTS = true;      // Show all 468 face keypoints (set to false to hide)
+let SHOW_VIDEO = true;
+let SHOW_ALL_KEYPOINTS = true;
+let TRACKED_KEYPOINT_INDEX = 1;
 
-// Customize which face point to track:
-// 1 = nose tip (default)
-// 10 = top of face
-// 152 = chin
-// 234 = left eye
-// 454 = right eye
-// 13 = lips
-let TRACKED_KEYPOINT_INDEX = 1;     // Which face point to use for interaction
+let cam;
+let facemesh;
+let faces = [];
+let cursor;
 
-let CURSOR_SIZE = 30;               // Size of the tracking cursor (nose dot)
-let CURSOR_COLOR = [255, 50, 50];   // Color of cursor (red)
-let KEYPOINT_SIZE = 3;              // Size of all face keypoints (if shown)
-
-// ==============================================
-// GLOBAL VARIABLES
-// ==============================================
-let cam;                            // PhoneCamera instance
-let facemesh;                       // ML5 FaceMesh model
-let faces = [];                     // Detected faces (updated automatically)
-let cursor;                         // Tracked keypoint position (mapped to screen coordinates)
-
+// Bars / state
 let waterLevel = 100;
 let sunLevel = 50;
 let gameOver = false;
-let win = false;
+let endreason = 0;
 
-// ==============================================
-// SETUP - Runs once when page loads
-// ==============================================
+// Score
+let score = 0;
+let highScore = 0;
+
+// scaling: how much bar changes per pixel of object size
+const WATER_GAIN_PER_PX = 0.7;   // size 10-30 → +7 to +21 water
+const SUN_GAIN_PER_PX   = 0.6;   // size 10-30 → +6 to +18 sun
+
+// decay each frame
+const WATER_DECAY = 0.075;
+const SUN_DECAY   = 0.075;        // sun goes down faster, as requested
+
+function preload() {
+  bg = loadImage('background.png');
+}
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   world.gravity.y = 0;
-  
-    neelum = new Sprite();
+
+  neelum = new Sprite();
   neelum.image = 'neelum.png';
   neelum.image.scale = 0.1;
-    neelum.color = "black";
-  neelum.collider = "kinematic"; // controlled manually
-  lockGestures();  // Prevent phone gestures (zoom, refresh)
+  neelum.color = "black";
+  neelum.collider = "kinematic";
 
-    objects = new Group();
-  objects.width = 40;
-  objects.height = 40;
+  objects = new Group();
   objects.collider = "dynamic";
-  objects.color = "green";
-  
-  // Create camera: front camera, mirrored, fit to canvas height
+
+  endreason = 0;
+  gameOver = false;
+  score = 0;
+
+  lockGestures();
+
   cam = createPhoneCamera('user', true, 'fitHeight');
-  
-  // Enable camera (handles initialization automatically)
   enableCameraTap();
-  
-  // Wait for camera to initialize, then create model and start detection
+
   cam.onReady(() => {
-    // Configure ML5 FaceMesh AFTER camera is ready
-    // This ensures the model gets correct video dimensions on iOS
     let options = {
-      maxFaces: 1,           // Only detect 1 face (faster)
-      refineLandmarks: false,// Skip detailed landmarks (faster)
-      runtime: 'mediapipe',  // Use MediaPipe runtime (same as HandPose)
-      flipHorizontal: false  // Don't flip in ML5 - cam.mapKeypoint() handles mirroring
+      maxFaces: 1,
+      refineLandmarks: false,
+      runtime: 'mediapipe',
+      flipHorizontal: false
     };
-    
-    // Create FaceMesh model and start detection when ready
     facemesh = ml5.faceMesh(options, () => {
       facemesh.detectStart(cam.videoElement, gotFaces);
     });
   });
 }
 
-// ==============================================
-// GOT FACES - Callback for face detection results
-// ==============================================
 function gotFaces(results) {
   faces = results;
 }
 
-// ==============================================
-// DRAW - Runs continuously (60 times per second)
-// ==============================================
 function draw() {
-  
-  background(0);  // Dark gray background
+  background(0);
+  image(bg, 0, 0, width, height);
 
-  
-  if (gameOver || win) {
-    drawEndScreen();
+  if (gameOver) {
+    drawEndScreen(endreason);
     return;
   }
-  
-  // // Draw the camera feed (toggle with touch)
-  // if (SHOW_VIDEO) {
-  //   image(cam, 0, 0);  // PhoneCamera handles positioning and mirroring!
-  // }
-  
-  // Draw face tracking
+
+  // score timer (seconds)
+  score += deltaTime / 1000.0;
+
+  // Face → neelum
   if (faces.length > 0) {
-    drawFaceTracking();
+    let face = faces[0];
+    if (face.keypoints && face.keypoints.length > 0) {
+      let trackedKeypoint = face.keypoints[TRACKED_KEYPOINT_INDEX];
+      if (trackedKeypoint) {
+        cursor = cam.mapKeypoint(trackedKeypoint);
+        neelum.moveTowards(cursor.x, cursor.y, 0.1);
+      }
+    }
   }
-  	
 
-    if (frameCount % 45 === 0) spawnObject();
+  // spawn
+  if (frameCount % 45 === 0) spawnObject();
 
-  // Handle collisions
+  // collisions
   neelum.overlap(objects, handleCollision);
 
-    waterLevel -= 0.1;
-  sunLevel -= 0.05;
+  // decay
+  waterLevel -= WATER_DECAY;
+  sunLevel   -= SUN_DECAY;
 
+  // deaths by depletion
+  if (waterLevel <= 0) endGame(1);                 // dehydration
+  if (sunLevel <= 0)   endGame(2);                 // vitamin D deficiency
 
-
-  if (waterLevel <= 0) endGame("Neelum dried up :(");
-  if (sunLevel <= 0) endGame("Neelum died of vitamin d deficiency :(");
   drawBars();
-
-
-  // Draw instructions and status
-  // drawUI();
+  drawHUD();
 }
+
 function spawnObject() {
   let side = floor(random(4));
   let o = new objects.Sprite();
 
-  // Weighted color choice (no green anymore)
+  // type + color (no green)
   let r = random();
   if (r < 0.45) {
-    o.type = "blue";
-    o.color = "blue";
+    o.type = "blue";   o.color = "blue";
   } else if (r < 0.9) {
-    o.type = "yellow";
-    o.color = "yellow";
+    o.type = "yellow"; o.color = "yellow";
   } else {
-    o.type = "red";
-    o.color = "red";
+    o.type = "red";    o.color = "red";
   }
 
-  o.width = o.height = 40;
+  // random size 10–30, square
+  const s = random(10, 30);
+  o.width = o.height = s;
 
-  // Spawn from a random side
-  if (side === 0) {
-    o.x = random(width);
-    o.y = -20;
-    o.vel.y = random(3, 6);
-  } else if (side === 1) {
-    o.x = random(width);
-    o.y = height + 20;
-    o.vel.y = random(-6, -3);
-  } else if (side === 2) {
-    o.x = -20;
-    o.y = random(height);
-    o.vel.x = random(3, 6);
-  } else if (side === 3) {
-    o.x = width + 20;
-    o.y = random(height);
-    o.vel.x = random(-6, -3);
+  // random speed
+  const sp = random(3, 6);
+
+  // spawn from a random side
+  if (side === 0) {        // top
+    o.x = random(width); o.y = -20; o.vel.y = sp;
+  } else if (side === 1) { // bottom
+    o.x = random(width); o.y = height + 20; o.vel.y = -sp;
+  } else if (side === 2) { // left
+    o.x = -20; o.y = random(height); o.vel.x = sp;
+  } else {                 // right
+    o.x = width + 20; o.y = random(height); o.vel.x = -sp;
   }
 }
 
 function handleCollision(p, o) {
-  let t = o.type;
+  const t = o.type;
+  const sizePx = o.width; // square
   o.remove();
 
   if (t === "blue") {
-    waterLevel = constrain(waterLevel + 15, 0, 100);
+    waterLevel = constrain(waterLevel + sizePx * WATER_GAIN_PER_PX, 0, 200);
   } else if (t === "yellow") {
-    sunLevel = constrain(sunLevel + 10, 0, 120);
-    if (sunLevel > 100) endGame("too_much_sun");
+    sunLevel = constrain(sunLevel + sizePx * SUN_GAIN_PER_PX, 0, 200);
+    if (sunLevel > 100) endGame(4); // too much sun
   } else if (t === "red") {
-    endGame("fire");
+    endGame(3); // air pollution (instant death)
   }
 }
-// ==============================================
-// DRAW FACE TRACKING - Use face position as UI input
-// ==============================================
-function drawFaceTracking() {
-  let face = faces[0];  // Get the first detected face
-  
-  if (!face.keypoints || face.keypoints.length === 0) return;
-  
-  // ==============================================
-  // MAIN INTERACTION: Get tracked keypoint position
-  // ==============================================
-  // This is the face point you can use to control UI elements!
-  // Change TRACKED_KEYPOINT_INDEX at top of file to track different points
-  
-  let trackedKeypoint = face.keypoints[TRACKED_KEYPOINT_INDEX];
-  if (!trackedKeypoint) return;
-  
-  // Map to screen coordinates - ONE LINE!
-  // cam.mapKeypoint() handles all scaling and mirroring automatically
-  cursor = cam.mapKeypoint(trackedKeypoint);
-  
-  // ==============================================
-  // USE THE CURSOR POSITION FOR INTERACTION
-  // ==============================================
-  // Now you have cursor.x and cursor.y to use however you want!
-  // Examples:
-  // - Move objects: object.x = cursor.x, object.y = cursor.y
-  // - Check collision: if (dist(cursor.x, cursor.y, target.x, target.y) < 50) {...}
-  // - Control parameters: brightness = map(cursor.y, 0, height, 0, 255)
-  // - Draw effects: ellipse(cursor.x, cursor.y, 50, 50)
-    neelum.moveTowards(cursor.x, cursor.y,.1);
 
-//   // Draw cursor at tracked position
-//   push();
-//   fill(CURSOR_COLOR[0], CURSOR_COLOR[1], CURSOR_COLOR[2]);
-//   noStroke();
-//   ellipse(cursor.x, cursor.y, CURSOR_SIZE, CURSOR_SIZE);
-  
-//   // Optional: Show crosshair for precise positioning
-//   stroke(CURSOR_COLOR[0], CURSOR_COLOR[1], CURSOR_COLOR[2], 150);
-//   strokeWeight(2);
-//   line(cursor.x - 15, cursor.y, cursor.x + 15, cursor.y);
-//   line(cursor.x, cursor.y - 15, cursor.x, cursor.y + 15);
-//   pop();
-  
-//   // Optional: Display coordinates (useful for debugging)
-//   push();
-//   fill(255);
-//   stroke(0);
-//   strokeWeight(3);
-//   textAlign(CENTER, TOP);
-//   textSize(14);
-//   text('x: ' + cursor.x.toFixed(0) + ', y: ' + cursor.y.toFixed(0) + 
-//        ', z: ' + (cursor.z || 0).toFixed(0), 
-//        cursor.x, cursor.y + CURSOR_SIZE/2 + 10);
-//   pop();
-  
-//   // ==============================================
-//   // OPTIONAL: Draw all face keypoints
-//   // ==============================================
-//   if (SHOW_ALL_KEYPOINTS) {
-//     // Map entire array at once with cam.mapKeypoints()
-//     let allPoints = cam.mapKeypoints(face.keypoints);
-    
-//     push();
-//     fill(0, 255, 0, 100);  // Green, semi-transparent
-//     noStroke();
-//     for (let point of allPoints) {
-//       ellipse(point.x, point.y, KEYPOINT_SIZE, KEYPOINT_SIZE);
-//     }
-//     pop();
-//   }
-}
-
-
-
-// ==============================================
-// TOUCH EVENTS - Toggle video display
-// ==============================================
 function drawBars() {
-  // Background panels
   noStroke();
   fill(50);
   rect(width / 6, height - 60, width / 3, 20, 5);
   rect(width / 2, height - 60, width / 3, 20, 5);
 
-  // Water bar
+  // Water bar (clamped to 0..100 for display)
   fill("blue");
-  rect(width / 6, height - 60, map(waterLevel, 0, 100, 0, width / 3), 20, 5);
+  rect(width / 6, height - 60,
+       map(constrain(waterLevel, 0, 100), 0, 100, 0, width / 3),
+       20, 5);
 
-  // Sun bar
+  // Sun bar (clamped to 0..100 for display)
   fill("yellow");
-  rect(width / 2, height - 60, map(sunLevel, 0, 100, 0, width / 3), 20, 5);
+  rect(width / 2, height - 60,
+       map(constrain(sunLevel, 0, 100), 0, 100, 0, width / 3),
+       20, 5);
 
   // Labels
   fill(255);
   textAlign(CENTER);
   textSize(14);
   text("WATER", width / 6 + width / 6, height - 65);
-  text("SUN", width / 2 + width / 6, height - 65);
+  text("SUN",   width / 2 + width / 6, height - 65);
 }
 
-function endGame(reason) {
+function drawHUD() {
+  fill(255);
+  textAlign(LEFT, TOP);
+  textSize(16);
+  text("Score: " + floor(score), 16, 16);
+
+  textAlign(RIGHT, TOP);
+  text("High: " + floor(highScore), width - 16, 16);
+}
+
+function endGame(reasonCode) {
+  if (gameOver) return;
   gameOver = true;
-  console.log("Neelum died:", reason);
+  endreason = reasonCode;
+  highScore = max(highScore, score);
+  // optionally stop all active sprites
+  objects.forEach(o => { o.vel.x = 0; o.vel.y = 0; });
 }
 
-function drawEndScreen() {
-  background(0);
+function drawEndScreen(code) {
+  background(0, 180);
   fill(255);
   textAlign(CENTER, CENTER);
-  textSize(32);
-  if (win) {
-    text("Neelum Thrived 🌱", width / 2, height / 2);
-  } else {
-    text("Neelum Died 💀", width / 2, height / 2);
-  }
+  textSize(28);
+
+  let msg = "";
+  if (code === 1) msg = "Neelum died from dehydration";
+  else if (code === 2) msg = "Neelum got vitamin D deficiency";
+  else if (code === 3) msg = "Neelum died from air pollution";
+  else if (code === 4) msg = "Neelum died from too much sun";
+  else msg = "Neelum died";
+
+  text(msg, width / 2, height / 2 - 20);
+
   textSize(18);
-  text("Tap to restart", width / 2, height / 2 + 40);
+  text(
+    "Final Score: " + floor(score) + "\nHigh Score: " + floor(highScore) + "\n\nTap to restart",
+    width / 2, height / 2 + 40
+  );
 }
 
 function touchStarted() {
-  if (gameOver || win) {
+  if (gameOver) {
     resetGame();
   } else {
     SHOW_VIDEO = !SHOW_VIDEO;
@@ -327,14 +244,11 @@ function touchStarted() {
 
 function resetGame() {
   gameOver = false;
-  win = false;
+  endreason = 0;
   waterLevel = 100;
   sunLevel = 50;
+  score = 0;
+
+  // remove existing objects
   objects.removeAll();
 }
-// Also works with mouse click for testing on desktop
-function mousePressed() {
-  SHOW_VIDEO = !SHOW_VIDEO;
-  return false;
-}
-
