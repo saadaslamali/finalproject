@@ -31,10 +31,14 @@ const SUN_GAIN_PER_PX   = 0.6;   // size 10-30 → +6 to +18 sun
 
 // decay each frame
 const WATER_DECAY = 0.075;
-const SUN_DECAY   = 0.075;        // sun goes down faster, as requested
+const SUN_DECAY   = 0.07;        // sun goes down faster, as requested
 
 function preload() {
-  bg = loadImage('background.png');
+  bg = loadImage('background3.png');
+
+    water = loadImage('watericon.png');
+  sun = loadImage('sunicon.png');
+  smog = loadImage('smogicon.png');
 }
 
 function setup() {
@@ -77,8 +81,12 @@ function gotFaces(results) {
 }
 
 function draw() {
+  // faded background
   background(0);
+  push();
+  tint(255, 200); // reduce opacity to ~80%
   image(bg, 0, 0, width, height);
+  pop();
 
   if (gameOver) {
     drawEndScreen(endreason);
@@ -87,6 +95,9 @@ function draw() {
 
   // score timer (seconds)
   score += deltaTime / 1000.0;
+
+  // draw shadows first
+  drawShadows();
 
   // Face → neelum
   if (faces.length > 0) {
@@ -111,11 +122,32 @@ function draw() {
   sunLevel   -= SUN_DECAY;
 
   // deaths by depletion
-  if (waterLevel <= 0) endGame(1);                 // dehydration
-  if (sunLevel <= 0)   endGame(2);                 // vitamin D deficiency
+  if (waterLevel <= 0) endGame(1);
+  if (sunLevel <= 0)   endGame(2);
 
   drawBars();
   drawHUD();
+}
+
+function drawShadows() {
+  // soft shadow under Neelum
+  push();
+  tint(0, 0, 0, 100); 
+  imageMode(CENTER);
+  image(neelum.image, neelum.x + 6, neelum.y + 10, neelum.width * 1.05, neelum.height * 1.05);
+  pop();
+
+  // shadows under each falling object
+  for (let o of objects) {
+    push();
+    noStroke();
+    if (o.type === "blue") fill(0, 0, 80, 100);       // blueish shadow
+    else if (o.type === "yellow") fill(80, 80, 0, 100); // warm yellow shadow
+    else if (o.type === "red") fill(80, 0, 0, 100);   // reddish shadow
+    else fill(0, 0, 0, 100);
+    ellipse(o.x, o.y + 6, o.width * 1.3, o.height * 1.3);
+    pop();
+  }
 }
 
 function spawnObject() {
@@ -124,13 +156,19 @@ function spawnObject() {
 
   // type + color (no green)
   let r = random();
-  if (r < 0.45) {
-    o.type = "blue";   o.color = "blue";
-  } else if (r < 0.9) {
-    o.type = "yellow"; o.color = "yellow";
-  } else {
-    o.type = "red";    o.color = "red";
-  }
+if (r < 0.25) {
+  o.type = "blue";
+  o.image = water;
+  o.image.scale = 0.08; // adjust to fit screen
+} else if (r < 0.9) {
+  o.type = "yellow";
+  o.image = sun;
+  o.image.scale = 0.08;
+} else {
+  o.type = "red";
+  o.image = smog;
+  o.image.scale = 0.08;
+}
 
   // random size 10–30, square
   const s = random(10, 30);
@@ -218,10 +256,10 @@ function drawEndScreen(code) {
   textSize(28);
 
   let msg = "";
-  if (code === 1) msg = "Neelum died from dehydration";
-  else if (code === 2) msg = "Neelum got vitamin D deficiency";
-  else if (code === 3) msg = "Neelum died from air pollution";
-  else if (code === 4) msg = "Neelum died from too much sun";
+  if (code === 1) msg = "Neelum died from dehydration :(";
+  else if (code === 2) msg = "Neelum died from vitamin D deficiency :(";
+  else if (code === 3) msg = "Neelum died from air pollution :(";
+  else if (code === 4) msg = "Neelum died from too much sun :(";
   else msg = "Neelum died";
 
   text(msg, width / 2, height / 2 - 20);
