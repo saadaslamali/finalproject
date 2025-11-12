@@ -35,11 +35,11 @@ const WATER_DECAY = 0.075;
 const SUN_DECAY   = 0.07;        // sun goes down faster, as requested
 
 function preload() {
-  bg = loadImage('background3.png');
+  bg = loadImage('background5.png');
 
-    water = loadImage('watericon.png');
-  sun = loadImage('sunicon.png');
-  smog = loadImage('smogicon.png');
+    water = loadImage('watericon3.png');
+  sun = loadImage('sunicon2.png');
+  smog = loadImage('smogicon2.png');
 }
 
 function setup() {
@@ -47,7 +47,7 @@ function setup() {
   world.gravity.y = 0;
 
   neelum = new Sprite();
-  neelum.image = 'neelum.png';
+  neelum.image = 'neelum2.png';
   neelum.image.scale = 0.1;
   neelum.color = "black";
   neelum.collider = "kinematic";
