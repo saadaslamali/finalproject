@@ -21,8 +21,10 @@ let sunLevel = 50;
 let gameOver = false;
 let endreason = 0;
 
-let startScreen = true; // new: start screen flag
-// Score
+
+
+let startScreen = true;      // first screen before anything
+let waitingForCamera = false; // after first tap, before game starts
 let score = 0;
 let highScore = 0;
 
@@ -98,7 +100,7 @@ function setup() {
 
   // Create camera (but don't start FaceMesh yet)
   cam = createPhoneCamera('user', true, 'fitHeight');
-  // enableCameraTap(); // <-- this is what triggers permission on first tap
+  enableCameraTap(); // <-- this is what triggers permission on first tap
 }
 
 function gotFaces(results) {
@@ -109,13 +111,16 @@ function draw() {
   // START SCREEN
   if (startScreen) {
     drawStartScreen();
-
-    // draw Neelum centered lower for aesthetic (static, no tracking yet)
     push();
     imageMode(CENTER);
-    let yOffset = height * 0.65; // a bit lower on screen
+    let yOffset = height * 0.65;
     image(loadImage('neelum.png'), width / 2, yOffset, width * 0.25, width * 0.25);
     pop();
+    return;
+  }
+
+  if (waitingForCamera) {
+    drawWaitingScreen();
     return;
   }
 
@@ -158,6 +163,22 @@ function draw() {
 
   drawBars();
   drawHUD();
+}
+
+function drawWaitingScreen() {
+  background(0);
+  push();
+  tint(255, 200);
+  image(bg, 0, 0, width, height);
+  pop();
+
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(min(width, height) * 0.045);
+  text("Allow camera access to continue", width / 2, height * 0.4);
+
+  textSize(min(width, height) * 0.035);
+  text("Then tap again to start", width / 2, height * 0.55);
 }
 
 function drawStartScreen() {
@@ -361,12 +382,13 @@ function touchStarted() {
   return false;
 }*/
 function touchStarted() {
-  // START SCREEN TAP
+  // FIRST TAP — request camera
   if (startScreen) {
     startScreen = false;
+    waitingForCamera = true;
 
-    // Wait for camera to be ready after user taps and permission granted
     cam.onReady(() => {
+      // When camera is ready, load FaceMesh
       let options = {
         maxFaces: 1,
         refineLandmarks: false,
@@ -377,10 +399,16 @@ function touchStarted() {
         facemesh.detectStart(cam.videoElement, gotFaces);
       });
     });
-
     return false;
   }
 
+  // SECOND TAP — once camera ready, start the game
+  if (waitingForCamera && cam.ready) {
+    waitingForCamera = false;
+    return false;
+  }
+
+  // Restart if game over
   if (gameOver) {
     resetGame();
     return false;
