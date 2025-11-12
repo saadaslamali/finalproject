@@ -98,7 +98,7 @@ function setup() {
 
   // Create camera (but don't start FaceMesh yet)
   cam = createPhoneCamera('user', true, 'fitHeight');
-  enableCameraTap(); // <-- this is what triggers permission on first tap
+  // enableCameraTap(); // <-- this is what triggers permission on first tap
 }
 
 function gotFaces(results) {
