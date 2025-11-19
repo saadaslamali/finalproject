@@ -76,6 +76,9 @@ function gotFaces(results) {
   if (results && results.length > 0) faceReady = true;
 }
 
+  let lastSpawn = 0;
+  const SPAWN_INTERVAL = 750; // milliseconds
+
 function draw() {
   background(0);
   push();
@@ -106,8 +109,7 @@ function draw() {
       }
     }
   }
-  let lastSpawn = 0;
-  const SPAWN_INTERVAL = 750; // milliseconds
+
 
   if (millis() - lastSpawn > SPAWN_INTERVAL) {
     spawnObject();
