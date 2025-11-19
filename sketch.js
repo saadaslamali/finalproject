@@ -24,7 +24,7 @@ let endreason = 0;
 
 // Score
 let score = 0;
-let highScore = 0;
+let highScore;
 
 // scaling
 const WATER_GAIN_PER_PX = 0.7;
@@ -50,6 +50,7 @@ function setup() {
 
   objects = new Group();
   objects.collider = "dynamic";
+  highScore = getItem('neelumHighScore') || 0;
 
   lockGestures();
 
@@ -105,8 +106,13 @@ function draw() {
       }
     }
   }
+  let lastSpawn = 0;
+  const SPAWN_INTERVAL = 750; // milliseconds
 
-  if (frameCount % 45 === 0) spawnObject();
+  if (millis() - lastSpawn > SPAWN_INTERVAL) {
+    spawnObject();
+    lastSpawn = millis();
+  }
   neelum.overlap(objects, handleCollision);
 
   waterLevel -= WATER_DECAY;
@@ -210,7 +216,10 @@ function endGame(reasonCode) {
   if (gameOver) return;
   gameOver = true;
   endreason = reasonCode;
-  highScore = max(highScore, score);
+  if (score > highScore) {
+    highScore = score;
+    storeItem('neelumHighScore', highScore);
+  }
   objects.forEach(o => { o.vel.x = 0; o.vel.y = 0; });
 }
 
