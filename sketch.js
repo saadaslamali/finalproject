@@ -116,7 +116,7 @@ function draw() {
       let trackedKeypoint = face.keypoints[TRACKED_KEYPOINT_INDEX];
       if (trackedKeypoint) {
         cursor = cam.mapKeypoint(trackedKeypoint);
-        neelum.moveTowards(cursor.x, cursor.y, 0.2);
+        neelum.moveTowards(cursor.x, cursor.y, 0.5);
       }
     }
   }
