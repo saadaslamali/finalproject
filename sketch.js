@@ -1,5 +1,7 @@
 // ==============================================
-// NEELUM — SMOOTH CAMERA + FACE-DETECTION WAIT FIX
+// NEELUM IN THE BIG CITY
+// Follow the adventures of Neelum the Money Plant as he attempts to survive the 
+// mean streets of Toronto. 
 // ==============================================
 
 let neelum;
@@ -16,6 +18,10 @@ let cursor;
 
 let faceReady = false; // new: wait until face detected once
 
+// Add this new variable
+let isTouching = false;
+
+
 // Bars / state
 let waterLevel = 100;
 let sunLevel = 50;
@@ -31,6 +37,14 @@ const WATER_GAIN_PER_PX = 0.7;
 const SUN_GAIN_PER_PX = 0.6;
 const WATER_DECAY = 0.075;
 const SUN_DECAY = 0.07;
+
+let WATER_SPAWN_RATE = 0.25;  // 25% chance
+let SUN_SPAWN_RATE = 0.65;    // 65% chance
+let SMOG_SPAWN_RATE = 0.10;   // 10% chance
+
+let lastSpawn = 0;
+const spawnInterval = 750; // milliseconds
+
 
 function preload() {
   bg = loadImage('background5.png');
@@ -76,8 +90,6 @@ function gotFaces(results) {
   if (results && results.length > 0) faceReady = true;
 }
 
-  let lastSpawn = 0;
-  const SPAWN_INTERVAL = 750; // milliseconds
 
 function draw() {
   background(0);
@@ -98,20 +110,19 @@ function draw() {
 
   score += deltaTime / 1000.0;
 
-  // Face tracking → move neelum
-  if (faces.length > 0) {
+  if (faces.length > 0 && !isTouching) {
     let face = faces[0];
     if (face.keypoints && face.keypoints.length > 0) {
       let trackedKeypoint = face.keypoints[TRACKED_KEYPOINT_INDEX];
       if (trackedKeypoint) {
         cursor = cam.mapKeypoint(trackedKeypoint);
-        neelum.moveTowards(cursor.x, cursor.y, 0.1);
+        neelum.moveTowards(cursor.x, cursor.y, 0.2);
       }
     }
   }
 
 
-  if (millis() - lastSpawn > SPAWN_INTERVAL) {
+  if (millis() - lastSpawn > spawnInterval) {
     spawnObject();
     lastSpawn = millis();
   }
@@ -126,6 +137,8 @@ function draw() {
   drawBars();
   drawHUD();
 }
+
+
 
 function drawLoading() {
   fill(255);
@@ -254,6 +267,18 @@ function touchStarted() {
     resetGame();
     return false;
   }
+  
+  isTouching = true;
+  neelum.collider = "dynamic";
+  
+  return false;
+}
+
+function touchEnded() {
+  isTouching = false;
+  neelum.collider = "kinematic";
+  neelum.vel.x = 0;
+  neelum.vel.y = 0;
   return false;
 }
 
