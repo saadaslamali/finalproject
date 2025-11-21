@@ -307,5 +307,4 @@ function resetGame() {
   sunLevel = 50;
   score = 0;
   objects.removeAll();
-  faceReady = false; // re-wait for tracking
 }
