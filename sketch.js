@@ -62,12 +62,12 @@ function setup() {
   world.gravity.y = 0;
 
   neelum = new Sprite();
-  neelum.image = 'neelum2.png';
-  neelum.image.scale = min(width, height) * 0.00001;
+  // neelum.image = 'neelum2.png';
   neelum.collider = "kinematic";
+    neelum.addAni('idle', '/neelum/neelum-0.png');
   neelum.addAni('sun', neelum_default_ani);
   neelum.addAni('water', neelum_grow_ani);
-
+  neelum.scale = min(width, height) * 0.0005;
   neelum.ani.stop();
 neelum.diameter = min(width, height) * 0.05;
   objects = new Group();
@@ -210,6 +210,8 @@ function handleCollision(p, o) {
     neelum.ani.onComplete = () => {
     neelum.ani.stop();
   neelum.ani.frame = 0;
+    neelum.changeAni('idle');
+
     };
   } else if (t === "yellow") {
     sunLevel = constrain(sunLevel + sizePx * SUN_GAIN_PER_PX, 0, 200);
@@ -220,6 +222,8 @@ function handleCollision(p, o) {
     neelum.ani.onComplete = () => {
     neelum.ani.stop();
     neelum.ani.frame = 0; 
+      neelum.changeAni('idle');
+
     };
     if (sunLevel > 100) endGame(4);
   } else if (t === "red") {
