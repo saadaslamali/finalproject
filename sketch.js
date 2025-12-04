@@ -63,7 +63,7 @@ function setup() {
 
   neelum = new Sprite();
   neelum.image = 'neelum2.png';
-neelum.image.scale = min(width, height) * 0.00008;
+  neelum.image.scale = min(width, height) * 0.00001;
   neelum.collider = "kinematic";
   neelum.addAni('sun', neelum_default_ani);
   neelum.addAni('water', neelum_grow_ani);
