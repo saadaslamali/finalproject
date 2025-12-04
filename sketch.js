@@ -7,6 +7,7 @@
 let neelum;
 let objects;
 let bg;
+let neelum_default_ani;
 
 let SHOW_VIDEO = true;
 let TRACKED_KEYPOINT_INDEX = 1;
@@ -51,6 +52,9 @@ function preload() {
   water = loadImage('watericon3.png');
   sun = loadImage('sunicon2.png');
   smog = loadImage('smogicon2.png');
+  neelum_default_ani = loadAnimation(imageSequence("neelum/neelum-",7));
+  neelum_grow_ani = loadAnimation(imageSequence("neelum-grow/neelum-",11));
+
 }
 
 function setup() {
@@ -61,7 +65,11 @@ function setup() {
   neelum.image = 'neelum2.png';
   neelum.image.scale = 0.1;
   neelum.collider = "kinematic";
+  neelum.addAni('sun', neelum_default_ani);
+  neelum.addAni('water', neelum_grow_ani);
 
+  neelum.ani.stop();
+neelum.diameter = min(width, height) * 0.35;
   objects = new Group();
   objects.collider = "dynamic";
   highScore = getItem('neelumHighScore') || 0;
@@ -82,6 +90,14 @@ function setup() {
       facemesh.detectStart(cam.videoElement, gotFaces);
     });
   });
+}
+
+function imageSequence(prefix, numberOfFrames, ext=".png"){
+let sequence = [];
+for (let i=0; i<numberOfFrames; i++){
+  sequence[i] = prefix + i + ext;
+}
+return sequence;
 }
 
 function gotFaces(results) {
@@ -188,8 +204,23 @@ function handleCollision(p, o) {
 
   if (t === "blue") {
     waterLevel = constrain(waterLevel + sizePx * WATER_GAIN_PER_PX, 0, 200);
+    neelum.changeAni('water'); 
+    neelum.ani.play();
+    neelum.ani.looping = false;
+    neelum.ani.onComplete = () => {
+    neelum.ani.stop();
+  neelum.ani.frame = 0;
+    };
   } else if (t === "yellow") {
     sunLevel = constrain(sunLevel + sizePx * SUN_GAIN_PER_PX, 0, 200);
+        neelum.changeAni('sun');
+
+    neelum.ani.play();
+    neelum.ani.looping = false; 
+    neelum.ani.onComplete = () => {
+    neelum.ani.stop();
+    neelum.ani.frame = 0; 
+    };
     if (sunLevel > 100) endGame(4);
   } else if (t === "red") {
     endGame(3);
