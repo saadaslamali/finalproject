@@ -63,13 +63,13 @@ function setup() {
 
   neelum = new Sprite();
   neelum.image = 'neelum2.png';
-  neelum.image.scale = 0.05;
+neelum.image.scale = min(width, height) * 0.00008;
   neelum.collider = "kinematic";
   neelum.addAni('sun', neelum_default_ani);
   neelum.addAni('water', neelum_grow_ani);
 
   neelum.ani.stop();
-neelum.diameter = min(width, height) * 0.2;
+neelum.diameter = min(width, height) * 0.05;
   objects = new Group();
   objects.collider = "dynamic";
   highScore = getItem('neelumHighScore') || 0;
