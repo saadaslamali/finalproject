@@ -67,7 +67,7 @@ function setup() {
     neelum.addAni('idle', '/neelum/neelum-0.png');
   neelum.addAni('sun', neelum_default_ani);
   neelum.addAni('water', neelum_grow_ani);
-  neelum.scale = min(width, height) * 0.0005;
+  neelum.scale = min(width, height) * 0.00075;
   neelum.ani.stop();
 neelum.diameter = min(width, height) * 0.05;
   objects = new Group();
@@ -208,8 +208,8 @@ function handleCollision(p, o) {
     neelum.ani.play();
     neelum.ani.looping = false;
     neelum.ani.onComplete = () => {
-    neelum.ani.stop();
-  neelum.ani.frame = 0;
+  //   neelum.ani.stop();
+  // neelum.ani.frame = 0;
     neelum.changeAni('idle');
 
     };
@@ -220,8 +220,8 @@ function handleCollision(p, o) {
     neelum.ani.play();
     neelum.ani.looping = false; 
     neelum.ani.onComplete = () => {
-    neelum.ani.stop();
-    neelum.ani.frame = 0; 
+    // neelum.ani.stop();
+    // neelum.ani.frame = 0; 
       neelum.changeAni('idle');
 
     };
