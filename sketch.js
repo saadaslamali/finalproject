@@ -208,9 +208,9 @@ function handleCollision(p, o) {
     neelum.ani.play();
     neelum.ani.looping = false;
     neelum.ani.onComplete = () => {
-  //   neelum.ani.stop();
-  // neelum.ani.frame = 0;
-    neelum.changeAni('idle');
+    neelum.ani.stop();
+  neelum.ani.frame = 0;
+    // neelum.changeAni('idle');
 
     };
   } else if (t === "yellow") {
@@ -220,9 +220,9 @@ function handleCollision(p, o) {
     neelum.ani.play();
     neelum.ani.looping = false; 
     neelum.ani.onComplete = () => {
-    // neelum.ani.stop();
-    // neelum.ani.frame = 0; 
-      neelum.changeAni('idle');
+    neelum.ani.stop();
+    neelum.ani.frame = 0; 
+      // neelum.changeAni('idle');
 
     };
     if (sunLevel > 100) endGame(4);
