@@ -69,7 +69,7 @@ function setup() {
   neelum.addAni('water', neelum_grow_ani);
   neelum.scale = min(width, height) * 0.00075;
   neelum.ani.stop();
-neelum.diameter = min(width, height) * 0.05;
+neelum.diameter = min(width, height) * 0.1;
   objects = new Group();
   objects.collider = "dynamic";
   highScore = getItem('neelumHighScore') || 0;
